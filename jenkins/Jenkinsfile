@@ -1,0 +1,57 @@
+pipeline {
+  agent any
+
+  environment {
+    DOCKER_HUB = "rajeevreddy1511"
+  }
+
+  stages {
+
+    stage('Clone Code') {
+      steps {
+        git 'https://github.com/Rajeev151124/HMIS_PROJECT.git'
+      }
+    }
+
+    stage('Build Docker Images') {
+      steps {
+        sh '''
+        docker build -t $DOCKER_HUB/patient-service ./services/patient
+        docker build -t $DOCKER_HUB/appointment-service ./services/appointment
+        docker build -t $DOCKER_HUB/auth-service ./services/auth
+        docker build -t $DOCKER_HUB/frontend ./frontend
+        '''
+      }
+    }
+
+    stage('Login to DockerHub') {
+      steps {
+        withCredentials([usernamePassword(
+          credentialsId: 'dockerhub-creds',
+          usernameVariable: 'USER',
+          passwordVariable: 'PASS'
+        )]) {
+          sh 'echo $PASS | docker login -u $USER --password-stdin'
+        }
+      }
+    }
+
+    stage('Push Images') {
+      steps {
+        sh '''
+        docker push $DOCKER_HUB/patient-service
+        docker push $DOCKER_HUB/appointment-service
+        docker push $DOCKER_HUB/auth-service
+        docker push $DOCKER_HUB/frontend
+        '''
+      }
+    }
+
+    stage('Deploy to Kubernetes') {
+      steps {
+        sh 'kubectl apply -f k8s/'
+      }
+    }
+
+  }
+}
