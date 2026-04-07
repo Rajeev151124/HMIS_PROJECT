@@ -9,7 +9,7 @@ function App() {
   });
 
   const register = async () => {
-    await axios.post("http://<EC2-IP>:3000/patients", patient);
+    await axios.post("http://<EC2-IP>:30007/patients", patient);
     alert("Patient saved!");
   };
 
